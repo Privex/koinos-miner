@@ -11,6 +11,66 @@ For the official version from OpenOrchard, please go [here](https://github.com/o
 
 OpenOrchard have given their green-light for the idea behind this miner version! 👍 They, however, have not verified nor checked the code nor are they affiliated with this version. I am using it extensively myself, but there *could* be bugs.
 
+## Quickstart with Docker
+
+[Privex](https://www.privex.io) regularly publishes automated docker image builds to DockerHub under the image [privex/koinos-miner](https://hub.docker.com/repository/docker/privex/koinos-miner) - these are pre-built container images that can be downloaded in just 1 to 3 minutes on fast 100mbps+ connections that contain the mining software preinstalled and ready to use.
+
+When you reference the image `privex/koinos` with Docker, it should automatically download it from DockerHub for you - no need to manually install it.
+
+Using Docker, you should be able to run the miner on most platforms, needing only Docker itself installed.
+
+```sh
+# If you don't yet have Docker installed, you can install it on Ubuntu 18.04 / 20.04 from apt
+apt update -qy
+apt install -y docker.io
+
+# You can specify your private key as an environment variable directly on the command line using '-e' for the fastest non-interactive
+# setup. It may be more secure however, to keep the privateKey inside of a .env file.
+# Replace the example private key (f3416...) and eth address (0x419b) with your own eth address and private key.
+docker run -e privateKey=f3416f83f4b34379b6bcb50187f3f96171626540983958f01187f76f9c63a49c --name koinos --rm -itd privex/koinos-miner -a 0x419b2E6af0Ed913DB7acF54BbCbE62cea6880D2c --use-env
+
+# Alternatively, you can store your private key in a .env file. Simply create a plain text file somewhere secure, for example,
+# inside of the root user's home folder.
+nano /root/koinos.env
+
+# Add the following line to the file (replace xxxxxxx with your actual private key)
+privateKey=xxxxxxxxxx
+
+# Close and save the file by pressing CTRL-X
+# Now we can use that env file with docker:
+docker run --env-file /root/koinos.env --name koinos --rm -itd privex/koinos-miner -a 0x419b2E6af0Ed913DB7acF54BbCbE62cea6880D2c --use-env
+
+# You can limit the number of CPU cores that the miner uses, by passing --cpus or --cpuset-cpus
+# The below example limits the miner container to 4 cores - it may occasionally switch the cores that it uses,
+# but will be limited to a maximum of 4 cores
+docker run --cpus 4 --env-file /root/koinos.env --name koinos --rm -itd privex/koinos-miner -a 0x419b2E6af0Ed913DB7acF54BbCbE62cea6880D2c --use-env
+
+# By using --cpuset-cpus we can restrict the miner to specific numbered CPU cores (starting from 0, meaning 0 is your first core)
+# In the below example, the miner will be limited to cores 0 to 2 (0+1+2), 5, and 8 to 10 (8+9+10).
+# This can be used to improve performance if you know certain cores are slower than others (e.g. thread cores on intel CPUs)
+docker run --cpuset-cpus=0-2,5,8-10 --env-file /root/koinos.env --name koinos --rm -itd privex/koinos-miner -a 0x419b2E6af0Ed913DB7acF54BbCbE62cea6880D2c --use-env
+```
+
+To stop the miner:
+
+```
+docker stop koinos
+```
+
+To check the logs of the miner
+
+```
+docker logs --tail=100 koinos
+```
+
+To follow the logs in realtime as it prints them (hit CTRL-C to exit the log follower):
+
+```
+docker logs --tail=100 -f koinos
+```
+
+
+
 ## Table of Contents
   - [Dependencies](#dependencies)
   - [Installation](#installation)

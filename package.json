@@ -1,6 +1,6 @@
 {
   "name": "koinos-miner",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Mining application used to mint the KOIN ERC-20.",
   "main": "index.js",
   "scripts": {
