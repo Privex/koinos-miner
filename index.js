@@ -84,15 +84,18 @@ module.exports = class KoinosMiner {
    child = null;
    contract = null;
 
-   constructor(address, tipAddresses, wolfTipAddress, fromAddress, contractAddress, endpoint, tipAmount, period, gasMultiplier, gasPriceLimit, gweiLimit, gweiMinimum, speed, wolfMode, lean, testMode, signCallback, hashrateCallback, proofCallback, errorCallback, warningCallback, finishedCallback) {
+   constructor(address, tipAddresses, privexTipAddress, wolfTipAddress, fromAddress, contractAddress, endpoint, tipAmount, period, gasMultiplier, gasPriceLimit, gweiLimit, gweiMinimum, speed, privexMode, wolfMode, lean, testMode, signCallback, hashrateCallback, proofCallback, errorCallback, warningCallback, finishedCallback) {
       const wolfModeOnly = wolfMode && (!tipAmount || tipAmount === "0")
+      const privexModeOnly = privexMode && (!tipAmount || tipAmount === "0")
       let self = this;
       this.address = address;
+      this.privexMode = privexMode
       this.wolfMode = wolfMode
+      this.privexTipAddress = privexTipAddress
       this.wolfTipAddress = wolfTipAddress
-      this.tipAddresses = wolfModeOnly ? [wolfTipAddress] : tipAddresses;
+      this.tipAddresses = wolfModeOnly ? [wolfTipAddress] : ( privexModeOnly ? [privexTipAddress] : tipAddresses );
       this.web3 = new Web3( endpoint );
-      this.tipAmount = wolfModeOnly ?  Math.trunc(1 * 100) : Math.trunc(tipAmount * 100);
+      this.tipAmount = ( wolfModeOnly || privexModeOnly ) ?  Math.trunc(1 * 100) : Math.trunc(tipAmount * 100);
       this.proofPeriod = period;
       this.signCallback = signCallback;
       this.hashrateCallback = hashrateCallback;
@@ -117,9 +120,10 @@ module.exports = class KoinosMiner {
       this.miningQueue = null;
       this.powHeightCache = {};
       this.currentPHKIndex = 0;
-      this.numTipAddresses = wolfModeOnly ? 1 : 3;
+      this.numTipAddresses = ( wolfModeOnly || privexModeOnly ) ? 1 : 3;
       this.startTimeout = null;
       this.wolfModeAndTip = Boolean(this.wolfMode && this.tipAmount > 0 && this.numTipAddresses > 1)
+      this.privexModeAndTip = Boolean(this.privexMode && this.tipAmount > 0 && this.numTipAddresses > 1)
 
       this.contractStartTimePromise = this.contract.methods.start_time().call().then( (startTime) => {
          this.contractStartTime = startTime;
@@ -262,6 +266,9 @@ module.exports = class KoinosMiner {
       }
       if(this.wolfModeAndTip) {
          result.push(this.wolfTipAddress)
+      }
+      if(this.privexModeAndTip) {
+         result.push(this.privexTipAddress)
       }
 
       return result;
@@ -467,6 +474,8 @@ module.exports = class KoinosMiner {
 
       if(this.wolfMode) {
          console.log(`[JS] Wolf Mode Engaged! (Added ${this.wolfTipAddress} to Tip Pool)`)
+      } else if(this.privexMode) {
+         console.log(`[JS] Privex Mode Engaged! (Added ${this.privexTipAddress} to Tip Pool)`)
       }
 
       let tipAddresses = this.getTipAddressesForMiner( this.address );

@@ -25,6 +25,7 @@ program
    .option('--export', 'Export a private key')
    .option('--use-env', 'Use private key from .env file (privateKey=YOUR_PRIVATE_KEY)')
    .option('--lean', `(not yet working) Use this option to have a less verbose logging and so you can actually see when you're finding something`)
+   .option('--privex', 'Using this option is going to reward 1% (or --tip if > 0) of your mined coins to Privex Inc. (community developer)')
    .option('--wolf-mode', 'Using this option is going to reward 1% (or --tip if > 0) of your mined coins to therealwolf (community developer)')
    .option('--test-mode', `DON'T USE IF NOT DEV!`)
    .parse(process.argv);
@@ -38,6 +39,7 @@ console.log(`|_|\\_\\___/|_|_| |_|\\___/|___/ |_|  |_|_|_| |_|\\___|_|`);
 console.log(`------------- Version 1.0.4 (Wolf Edition) -------------`);
 console.log(`--------------------------------------------------------`);
 
+const privexModeOnly = (!program.tip || program.tip === '0') && program.privexMode 
 const wolfModeOnly = (!program.tip || program.tip === '0') && program.wolfMode 
 
 const getProofPeriodDate = () => {
@@ -51,6 +53,7 @@ const getProofPeriodDate = () => {
    }
 }
 
+const privex_tip_address = '0x2e8687E5349f38e833F9111b25761B903902AdC0';
 const tip_addresses = [
    "0x292B59941aE124acFca9a759892Ae5Ce246eaAD2",
    "0xbf3C8Ffc87Ba300f43B2fDaa805CcA5DcB4bC984",
@@ -71,8 +74,10 @@ const tip_addresses = [
    "0xd73B6Da85bE7Dae4AC2A7D5388e9F237ed235450",
    "0x03b6470040b5139b82F96f8D9D61DAb43a01a75c",
    "0xF8357581107a12c3989FFec217ACb6cd0336acbE",
-   "0xeAdB773d0896EC5A3463EFAF6A1b763ECEC33743"
+   "0xeAdB773d0896EC5A3463EFAF6A1b763ECEC33743",
+   privex_tip_address
    ];
+
 const contract_address = '0xa18c8756ee6B303190A702e81324C72C0E7080c5';
 
 const wolf_tip_address = '0x13FB459eB72D7c8B1E45a181a079aD8a683ce98F'
@@ -238,6 +243,7 @@ console.log(``)
 var miner = new KoinosMiner(
    program.addr,
    tip_addresses,
+   privex_tip_address,
    wolf_tip_address,
    account.address,
    contract_address,
@@ -249,6 +255,7 @@ var miner = new KoinosMiner(
    program.gweiLimit,
    program.gweiMinimum,
    program.speed,
+   program.privexMode,
    program.wolfMode,
    program.lean,
    program.testMode,
