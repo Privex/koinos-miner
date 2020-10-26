@@ -7,19 +7,42 @@ const crypto = require('crypto')
 var Web3 = require('web3');
 var w3 = new Web3(program.endpoint);
 var fs = require('fs');
+const packagejson = require('./package.json');
+
+function conf_get(k, fallback = null) {
+  if (k in process.env) return process.env[k];
+  if (k.toUpperCase() in process.env) return process.env[k.toUpperCase()];
+  return fallback;
+}
+
+var config = {
+  address: conf_get('address'),
+  endpoint: conf_get('endpoint', 'http://mining.koinos.io'),
+  tip: conf_get('tip', '5'),
+  proof_period: conf_get('proof_period', '172800'), // 86400 * 2 = 172800 (2 days)
+  gas_multiplier: conf_get('gas_multiplier', '1'),
+  gas_price_limit: conf_get('gas_price_limit', '1000000000000'),
+  gwei_limit: conf_get('gwei_limit', '1000'),
+  speed: conf_get('speed', false),
+  gwei_minimum: conf_get('gwei_minimum', '15'),
+  private_key: conf_get('private_key', conf_get('privateKey')),
+  use_env: conf_get('use_env', conf_get('useEnv', false)),
+  privex_mode: conf_get('privex_mode', conf_get('privexMode', false)),
+}
+config.useEnv = config.use_env
 
 program
-   .version('1.0.4', '-v, --version')
+   .version(packagejson.version, '-v, --version')
    .usage('[OPTIONS]...')
-   .requiredOption('-a, --addr <addr>', 'An ethereum address')
+   .option('-a, --addr <addr>', 'An ethereum address')
    .option('-e, --endpoint <endpoint>', 'An ethereum endpoint', 'http://mining.koinos.io')
-   .option('-t, --tip <percent>', 'The percentage of mined coins to tip the developers', '5')
-   .option('-p, --proof-period <seconds>', 'How often you want to submit a proof on average', '86400')
+   .option('-t, --tip <percent>', 'The percentage of mined coins to tip the developers', config.tip)
+   .option('-p, --proof-period <seconds>', 'How often you want to submit a proof on average', config.proof_period)
    .option('-k, --key-file <file>', 'AES encrypted file containing private key')
-   .option('-m, --gas-multiplier <multiplier>', 'The multiplier to apply to the recommended gas price', '1')
-   .option('-l, --gas-price-limit <limit>', 'The maximum amount of gas to be spent on a proof submission', '1000000000000')
-   .option('-g, --gwei-limit <limit>', 'The maximum amount of gas in gwei unit to be spent on a proof submission', '1000')
-   .option('-b, --gwei-minimum <limit>', 'The minimum amount of gas in gwei unit to be spent on a proof submission', '15')
+   .option('-m, --gas-multiplier <multiplier>', 'The multiplier to apply to the recommended gas price', config.gas_multiplier)
+   .option('-l, --gas-price-limit <limit>', 'The maximum amount of gas to be spent on a proof submission', config.gas_price_limit)
+   .option('-g, --gwei-limit <limit>', 'The maximum amount of gas in gwei unit to be spent on a proof submission', config.gwei_limit)
+   .option('-b, --gwei-minimum <limit>', 'The minimum amount of gas in gwei unit to be spent on a proof submission', config.gwei_minimum)
    .option('-s, --speed <speed>', `How fast should the transaction be: slow | medium | optimal | fast | fastest (https://fees.upvest.co/estimate_eth_fees)`)
    .option('--import', 'Import a private key')
    .option('--export', 'Export a private key')
@@ -29,6 +52,23 @@ program
    .option('--wolf-mode', 'Using this option is going to reward 1% (or --tip if > 0) of your mined coins to therealwolf (community developer)')
    .option('--test-mode', `DON'T USE IF NOT DEV!`)
    .parse(process.argv);
+
+if (!program.addr && !config.address) {
+  console.error("ERROR: You MUST specify your Ethereum address, either by using '-a 0xABCD1234abcDeF' - or have it in the environment variable 'ADDRESS'");
+  console.error("Exiting miner!");
+  process.exit(0);
+}
+
+config.addr          = config.address = program.addr ? program.addr : config.address;
+config.endpoint      = program.endpoint ? program.endpoint : config.endpoint;
+config.tip           = program.tip ? program.tip : config.tip;
+config.speed         = program.speed ? program.speed : config.speed;
+config.useEnv        = config.use_env = program.useEnv ? program.useEnv : config.use_env;
+config.proofPeriod   = config.proof_period = program.proofPeriod ? program.proofPeriod : config.proof_period;
+config.gasMultiplier = config.gas_multiplier = program.gasMultiplier ? program.gasMultiplier : config.gas_multiplier;
+config.gasPriceLimit = config.gas_price_limit = program.gasPriceLimit ? program.gasPriceLimit : config.gas_price_limit;
+config.gweiLimit     = config.gwei_limit = program.gweiLimit ? program.gweiLimit : config.gwei_limit;
+config.gweiMinimum   = config.gwei_minimum = program.gweiMinimum ? program.gweiMinimum : config.gwei_minimum;
 
 console.log(` _  __     _                   __  __ _`);
 console.log(`| |/ /    (_)                 |  \\/  (_)`);
@@ -161,13 +201,13 @@ if(program.testMode) {
    readlineSync.question('Are you sure?');
 }
 
-if(!program.import && program.useEnv) {
-   if(!process.env.privateKey) {
+if(config.useEnv || (!program.import && program.useEnv)) {
+   if(!config.private_key) {
       console.log(``);
-      console.log(`Can't find privateKey within .env file. (--use-env)`);
-      process.exit(0);
+      console.log(`Can't find privateKey / PRIVATE_KEY within .env file. (--use-env)`);
+      process.exit(1);
    }
-   account = w3.eth.accounts.privateKeyToAccount(process.env.privateKey);
+   account = w3.eth.accounts.privateKeyToAccount(config.private_key);
 }
 else if (program.import)
 {
@@ -226,34 +266,34 @@ else
 
 console.log(``);
 console.log(`[JS](app.js) Mining with the following arguments:`);
-console.log(`[JS](app.js) Ethereum Receiver Address: ${program.addr}`);
+console.log(`[JS](app.js) Ethereum Receiver Address: ${config.addr}`);
 console.log(`[JS](app.js) Ethereum Miner Address: ${account.address}`);
-console.log(`[JS](app.js) Ethereum Endpoint: ${program.endpoint}`);
-console.log(`[JS](app.js) Proof every ${getProofPeriodDate()} (${program.proofPeriod})`);
+console.log(`[JS](app.js) Ethereum Endpoint: ${config.endpoint}`);
+console.log(`[JS](app.js) Proof every ${getProofPeriodDate()} (${config.proofPeriod})`);
 if(wolfModeOnly) {
    console.log(`[JS](app.js) Wolf Mode Engaged! Gracias! (1% Tip)`)
    console.log(`[JS](app.js) Open Orchard Tip Disabled :(`)
 } else {
-   console.log(`[JS](app.js) Open Orchard Developer Tip: ${program.tip}%`); 
+   console.log(`[JS](app.js) Open Orchard Developer Tip: ${config.tip}%`); 
    if(program.wolfMode) console.log(`[JS](app.js) Wolf Mode Engaged! Gracias!`)
 }
 console.log(``)
 
 
 var miner = new KoinosMiner(
-   program.addr,
+   config.addr,
    tip_addresses,
    privex_tip_address,
    wolf_tip_address,
    account.address,
    contract_address,
-   program.endpoint,
-   program.tip,
-   program.proofPeriod,
-   program.gasMultiplier,
-   program.gasPriceLimit,
-   program.gweiLimit,
-   program.gweiMinimum,
+   config.endpoint,
+   config.tip,
+   config.proofPeriod,
+   config.gasMultiplier,
+   config.gasPriceLimit,
+   config.gweiLimit,
+   config.gweiMinimum,
    program.speed,
    program.privexMode,
    program.wolfMode,
