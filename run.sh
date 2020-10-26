@@ -79,7 +79,9 @@ _l() {
   msgerr yellow "\n ========================================================================= \n"
 }
 
-source "${DIR}/.env"
+: ${ENV_FILE="${DIR}/.env"}
+
+[[ -f "${ENV_FILE}" ]] && source "${ENV_FILE}" || true
 
 # Controls the --cpus argument to docker run
 # Rather than limiting the actual physical cores it can run on, it limits the container to a certain % on all available CPUs.
@@ -95,7 +97,6 @@ source "${DIR}/.env"
 
 : ${DOCKER_NAME="koinos"}
 : ${DOCKER_IMAGE="privex/koinos-miner"}
-: ${ENV_FILE="${DIR}/.env"}
 : ${DOCKER_RESTART="always"}
 : ${DOCKER_RM=1}
 
