@@ -38,6 +38,7 @@ program
    .option('-e, --endpoint <endpoint>', 'An ethereum endpoint', 'http://mining.koinos.io')
    .option('-t, --tip <percent>', 'The percentage of mined coins to tip the developers', config.tip)
    .option('-p, --proof-period <seconds>', 'How often you want to submit a proof on average', config.proof_period)
+   .option('-pe, --pool-endpoint <pool endpoint>', 'A mining pool endpoint', 'https://api.koinos.club')
    .option('-k, --key-file <file>', 'AES encrypted file containing private key')
    .option('-m, --gas-multiplier <multiplier>', 'The multiplier to apply to the recommended gas price', config.gas_multiplier)
    .option('-l, --gas-price-limit <limit>', 'The maximum amount of gas to be spent on a proof submission', config.gas_price_limit)
@@ -51,6 +52,7 @@ program
    .option('--privex', 'Using this option is going to reward 1% (or --tip if > 0) of your mined coins to Privex Inc. (community developer)')
    .option('--wolf-mode', 'Using this option is going to reward 1% (or --tip if > 0) of your mined coins to therealwolf (community developer)')
    .option('--test-mode', `DON'T USE IF NOT DEV!`)
+   .option('--no-pool', 'Not use a mining pool')
    .parse(process.argv);
 
 if (!program.addr && !config.address) {
@@ -157,6 +159,12 @@ let signCallback = async function(web3, txData)
    return (await web3.eth.accounts.signTransaction(txData, account.privateKey)).rawTransaction;
 }
 
+let poolStatsCallback = function(responsePool)
+{
+   console.log(`[JS](app.js) Hashrate detected by the pool:`);// ${KoinosMiner.formatHashRate(responsePool.hashRate)}`);
+   console.log(responsePool);
+}
+
 function enterPassword()
 {
    return readlineSync.questionNewPassword('Enter password for encryption: ', {mask: ''});
@@ -199,6 +207,11 @@ function decrypt(cipherText, password)
 
 if(program.testMode) {
    readlineSync.question('Are you sure?');
+}
+
+if (program.pool)
+{
+   console.log('Using mining pool: ' + program.poolEndpoint);
 }
 
 if(config.useEnv || (!program.import && program.useEnv)) {
@@ -283,6 +296,8 @@ console.log(``)
 var miner = new KoinosMiner(
    config.addr,
    tip_addresses,
+   program.pool ? "0x0000000000000000000000000000000000000000" : account.address,
+   program.pool ? program.poolEndpoint : null,
    privex_tip_address,
    wolf_tip_address,
    account.address,
@@ -304,6 +319,6 @@ var miner = new KoinosMiner(
    proofCallback,
    errorCallback,
    warningCallback,
-   finishedCallback);
+   poolStatsCallback);
 
 miner.start();
