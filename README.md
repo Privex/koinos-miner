@@ -7,15 +7,15 @@
 
 This miner has been enhanced with some great features, you can read more about them under the section **Getting Started**.
 
-For the official version from OpenOrchard, please go [here](https://github.com/open-orchard/koinos-miner). 
+For the official version from OpenOrchard, please go [here](https://github.com/open-orchard/koinos-miner).
 
 OpenOrchard have given their green-light for the idea behind this miner version! 👍 They, however, have not verified nor checked the code nor are they affiliated with this version. I am using it extensively myself, but there *could* be bugs.
 
 ## Quickstart with Docker
 
-[Privex](https://www.privex.io) regularly publishes automated docker image builds to DockerHub under the image [privex/koinos-miner](https://hub.docker.com/repository/docker/privex/koinos-miner) - these are pre-built container images that can be downloaded in just 1 to 3 minutes on fast 100mbps+ connections that contain the mining software preinstalled and ready to use.
+[Privex](https://www.privex.io) regularly publishes automated docker image builds to DockerHub under the image [privex/koinosclub](https://hub.docker.com/repository/docker/privex/koinosclub) - these are pre-built container images that can be downloaded in just 1 to 3 minutes on fast 100mbps+ connections that contain the mining software preinstalled and ready to use.
 
-When you reference the image `privex/koinos` with Docker, it should automatically download it from DockerHub for you - no need to manually install it.
+When you reference the image `privex/koinosclub` with Docker, it should automatically download it from DockerHub for you - no need to manually install it.
 
 Using Docker, you should be able to run the miner on most platforms, needing only Docker itself installed.
 
@@ -27,7 +27,7 @@ apt install -y docker.io
 # You can specify your private key as an environment variable directly on the command line using '-e' for the fastest non-interactive
 # setup. It may be more secure however, to keep the privateKey inside of a .env file.
 # Replace the example private key (f3416...) and eth address (0x419b) with your own eth address and private key.
-docker run -e privateKey=f3416f83f4b34379b6bcb50187f3f96171626540983958f01187f76f9c63a49c --name koinos --rm -itd privex/koinos-miner -a 0x419b2E6af0Ed913DB7acF54BbCbE62cea6880D2c --use-env
+docker run -e privateKey=f3416f83f4b34379b6bcb50187f3f96171626540983958f01187f76f9c63a49c --name koinos --rm -itd privex/koinosclub -a 0x419b2E6af0Ed913DB7acF54BbCbE62cea6880D2c --use-env
 
 # Alternatively, you can store your private key in a .env file. Simply create a plain text file somewhere secure, for example,
 # inside of the root user's home folder.
@@ -38,45 +38,44 @@ privateKey=xxxxxxxxxx
 
 # Close and save the file by pressing CTRL-X
 # Now we can use that env file with docker:
-docker run --env-file /root/koinos.env --name koinos --rm -itd privex/koinos-miner -a 0x419b2E6af0Ed913DB7acF54BbCbE62cea6880D2c --use-env
+docker run --env-file /root/koinos.env --name koinos --rm -itd privex/koinosclub -a 0x419b2E6af0Ed913DB7acF54BbCbE62cea6880D2c --use-env
 
 # You can limit the number of CPU cores that the miner uses, by passing --cpus or --cpuset-cpus
 # The below example limits the miner container to 4 cores - it may occasionally switch the cores that it uses,
 # but will be limited to a maximum of 4 cores
-docker run --cpus 4 --env-file /root/koinos.env --name koinos --rm -itd privex/koinos-miner -a 0x419b2E6af0Ed913DB7acF54BbCbE62cea6880D2c --use-env
+docker run --cpus 4 --env-file /root/koinos.env --name koinos --rm -itd privex/koinosclub -a 0x419b2E6af0Ed913DB7acF54BbCbE62cea6880D2c --use-env
 
 # By using --cpuset-cpus we can restrict the miner to specific numbered CPU cores (starting from 0, meaning 0 is your first core)
 # In the below example, the miner will be limited to cores 0 to 2 (0+1+2), 5, and 8 to 10 (8+9+10).
 # This can be used to improve performance if you know certain cores are slower than others (e.g. thread cores on intel CPUs)
-docker run --cpuset-cpus=0-2,5,8-10 --env-file /root/koinos.env --name koinos --rm -itd privex/koinos-miner -a 0x419b2E6af0Ed913DB7acF54BbCbE62cea6880D2c --use-env
+docker run --cpuset-cpus=0-2,5,8-10 --env-file /root/koinos.env --name koinos --rm -itd privex/koinosclub -a 0x419b2E6af0Ed913DB7acF54BbCbE62cea6880D2c --use-env
 ```
 
 To stop the miner:
 
-```
+```sh
 docker stop koinos
 ```
 
 To check the logs of the miner
 
-```
+```sh
 docker logs --tail=100 koinos
 ```
 
 To follow the logs in realtime as it prints them (hit CTRL-C to exit the log follower):
 
-```
+```sh
 docker logs --tail=100 -f koinos
 ```
 
-
-
 ## Table of Contents
-  - [Dependencies](#dependencies)
-  - [Installation](#installation)
-  - [Getting Started](#getting-started)
-  - [Example Run](#example-run)
-  - [FAQ](#FAQ)
+
+- [Dependencies](#dependencies)
+- [Installation](#installation)
+- [Getting Started](#getting-started)
+- [Example Run](#example-run)
+- [FAQ](#FAQ)
 
 ## Dependencies
 
@@ -84,14 +83,15 @@ Prior to installation, you'll need to install the necessary dependencies.
 
 ### Linux (Debian based)
 
-```
+```sh
 sudo apt-get install git cmake build-essential libssl-dev
 ```
 
 ### macOS
 
 On macOS, installing `gcc` is required to support OpenMP parallelization. Using the `brew` package manager, install OpenSSL and gcc.
-```
+
+```sh
 brew install openssl gcc cmake
 ```
 
@@ -99,7 +99,7 @@ brew install openssl gcc cmake
 
 On Windows, ensure that you are using the `MingW` compiler and you have installed `CMake`. Using the cholocately package manager, install OpenSSL.
 
-```
+```sh
 choco install openssl
 ```
 
@@ -107,19 +107,23 @@ choco install openssl
 
 For both Windows and Linux, you should be able to simply invoke the standard `npm` installer.
 
-```
+```sh
 npm install
 ```
 
-For macOS, you will need to specify the C compiler as `gcc`.
+For macOS, you will need to specify the C compiler as `gcc-x` - where `x` is the version of gcc you have installed.
 
-```
+At the time of writing, the latest `gcc` on OSX is `gcc-10`.
+
+If you only have an older version of gcc available, e.g. gcc v7, you would write `CC=gcc-7` instead of `CC=gcc-10`
+
+```sh
 CC=gcc-10 npm install
 ```
 
 For macOS, you also might need to set the correct openssl directory:
 
-```
+```sh
 #1: Find your local ssl path (example: /usr/local/Cellar/openssl@1.1 or /usr/local/Cellar/openssl)
 #2: Open package.json, change "postinstall" to "postinstall:other" and "postinstall:osx" to "postinstall"
 #3: Look at "postinstall" and change the ssl paths for "DOPENSSL_ROOT_DIR" and "DOPENSSL_LIBRARIES". The second path is the same as the first just with "/lib" at the end
@@ -129,7 +133,7 @@ For macOS, you also might need to set the correct openssl directory:
 
 You can view the CLI miner arguments by using `npm` like so:
 
-```
+```sh
 npm start -- --help
 ```
 
@@ -200,7 +204,7 @@ The CLI miner provides the arguments `--import`, `--export`, and `--key-file`. T
 
 If you know what you're doing, you can also use `--use-env` to get the key from an `.env` file:
 
-```
+```sh
 echo privateKey=YOUR_PRIVATE_KEY | tee .env
 ```
 
@@ -208,7 +212,7 @@ echo privateKey=YOUR_PRIVATE_KEY | tee .env
 
 A simple example of running the miner:
 
-```
+```sh
 ❯ npm start -- --endpoint http://mining.koinos.io --addr 0x98047645bf61644caa0c24daabd118cc1d640f62 --use-env --speed optimal --tip 5 --proof-period 20000 --gwei-minimum 30 --wolf-mode
 
 > koinos-miner@1.0.3 start /path/to/koinos-miner
@@ -239,7 +243,7 @@ A simple example of running the miner:
 
 You can run the miner using docker. Image size optimized to 250 MB:
 
-```
+```sh
 docker run privex/koinclub:latest
 ```
 
@@ -254,11 +258,14 @@ No. You just need to provide the address where you want to receive the mined koi
 Send a minimum amount of 0.02 ETH to 0x5c3365898a31a8b0bf90d84ef93245e56570eef9 to add it to your balance in the pool (check your balance at https://koinos.club). Then start the miner.
 
 ## How the mining pool can reduce the transaction fees?
+
 All miners are divided in groups of 5, and each group is working on a specific target. When a proof is found only 1 transaction is submitted and it includes the 5 miners are benefiaries. Then the transaction fees, plus a fee for the pool, are shared between. Each miner can reduce up to 60% in transaction fees with this model.
 
 ## How I know if I'm in a group of 5 miners?
+
 Check the logs of your miner and look for a list of miners. For instance, in this example there are 3 miners in a group:
-```
+
+```sh
 ...
 [C] Buffer: 3 0xbbd1f77c6759a17752105e9af7d10f38ebbb3ab9 0x8c09525132adbb9bacdd62eb26970b400eb8f493 0x6487c30a3a148acc85fc31250cd53e55ed92c802 0x0000000000000000000000000000000000000000 0x0000000000000000000000000000000000000000 4391 3472 2137 0 0 0xe64ea68f85f992efad6806652d0ebb39a198bcfdfce1d7d2d96faccc5f4edb58 11270144 0x0000000036cfebde5da992b610b10f4fbff79767579aa30b8d23855b77febbb6 0x000001355d281789015ca71bc5fe2ca3ee68c1f443494418d9ce0bb0db19cdbf 1 115693 55532886 0xe64ea68f85f992efad6806652d0ebb39a198bcfdfce20006487ce900010b23b5;
 [C] Miners:
@@ -275,10 +282,13 @@ Check the logs of your miner and look for a list of miners. For instance, in thi
 [C] Start Nonce: 0xe64ea68f85f992efad6806652d0ebb39a198bcfdfce20006487ce900010b23b5
 ...
 ```
+
 ## Can I use several miners with the same address?
+
 Yes. You can set several miners. The mining pool will take care of assigning different tasks to each one in order to optimize the resources. All the hashing power is added to a group of miners in order to receive 1 single payment when submitting proofs.
 
 ## I have this error: Insufficient funds to operate in the pool
+
 You need a minimum of 0.02 ether to operate in the pool. Send eth to 0x5c3365898a31a8b0bf90d84ef93245e56570eef9, wait for 4 or 5 confirmations. If you are still receiving this error go to https://koinos.club and send the transaction id to add it to your balance.
 
 ## License

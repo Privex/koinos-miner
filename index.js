@@ -7,15 +7,11 @@ const abi = require('./abi.js');
 const crypto = require('crypto');
 const {Looper} = require("./looper.js");
 const Retry = require("./retry.js");
-<<<<<<< HEAD
 const axios = require('axios');
 const moment = require('moment');
-
 const GWEI_UNIT = 1000000000
 const DEFAULT_SPEED = 'optimal'
-=======
 const MiningPool = require("./MiningPool.js");
->>>>>>> 574b5217877d77d0e40ffa052b390a5441d46284
 
 function hashString( number ) {
    let numberStr = number.toString(16);
@@ -101,22 +97,25 @@ module.exports = class KoinosMiner {
    hashRate = 0;
    child = null;
    contract = null;
-   constructor(address, tipAddresses, poolEndpoint, privexTipAddress, wolfTipAddress, fromAddress, contractAddress, blockchainEndpoint, poolEndpoint, tipAmount, period, gasMultiplier, gasPriceLimit, gweiLimit, gweiMinimum, speed, privexMode, wolfMode, lean, testMode, signCallback, hashrateCallback, proofCallback, errorCallback, warningCallback, poolStatsCallback) {
+   constructor(address, tipAddresses, fromAddress, poolEndpoint, privexTipAddress, wolfTipAddress, contractAddress, endpoint, tipAmount, period, gasMultiplier, gasPriceLimit, gweiLimit, gweiMinimum, speed, privexMode, wolfMode, lean, testMode, signCallback, hashrateCallback, proofCallback, errorCallback, warningCallback, poolStatsCallback) {
 
    // constructor(address, tipAddresses, privexTipAddress, wolfTipAddress, fromAddress, contractAddress, blockchainEndpoint, poolEndpoint, tipAmount, period, gasMultiplier, gasPriceLimit, gweiLimit, gweiMinimum, speed, privexMode, wolfMode, lean, testMode, signCallback, hashrateCallback, proofCallback, errorCallback, warningCallback, finishedCallback) {
       const wolfModeOnly = wolfMode && (!tipAmount || tipAmount === "0")
       const privexModeOnly = privexMode && (!tipAmount || tipAmount === "0")
       let self = this;
       this.address = address;
-      this.privexMode = privexMode
-      this.wolfMode = wolfMode
-      this.privexTipAddress = privexTipAddress
-      this.wolfTipAddress = wolfTipAddress
+      this.privexMode = privexMode;
+      this.wolfMode = wolfMode;
+      this.poolMode = (poolEndpoint !== null);
+      this.privexTipAddress = privexTipAddress;
+      this.wolfTipAddress = wolfTipAddress;
       this.tipAddresses = wolfModeOnly ? [wolfTipAddress] : ( privexModeOnly ? [privexTipAddress] : tipAddresses );
       this.web3 = new Web3( endpoint );
-      this.tipAmount = ( wolfModeOnly || privexModeOnly ) ?  Math.trunc(1 * 100) : Math.trunc(tipAmount * 100);
+      // When mining to a pool, tip % is restricted to either 0 or 5%
+      // Thus, if privex/wolf mode is enabled, and we're mining to a pool, then we set the tip to 5% instead of 1%
+      this.tipAmount = ( wolfModeOnly || privexModeOnly ) ?  ((this.poolMode) ? Math.trunc(5 * 100) : Math.trunc(1 * 100)) : Math.trunc(tipAmount * 100);
 
-      if(this.tipAmount !== 0 && this.tipAmount !== 500)
+      if(poolEndpoint !== null && this.tipAmount !== 0 && this.tipAmount !== 500)
         throw new Error("The tip must be 0% or 5%");
 
       this.machine = 0;      
@@ -126,15 +125,15 @@ module.exports = class KoinosMiner {
       this.hashrateCallback = hashrateCallback;
       this.errorCallback = errorCallback;
       this.warningCallback = warningCallback;
-      this.finishedCallback = finishedCallback
+      this.finishedCallback = poolStatsCallback;
       this.fromAddress = fromAddress;
       this.gasMultiplier = gasMultiplier;
       this.gasPriceLimit = gasPriceLimit;
-      this.gweiLimit = gweiLimit
-      this.gweiMinimum = gweiMinimum
-      this.speed = speed
-      this.lean = lean
-      this.testMode = testMode
+      this.gweiLimit = gweiLimit;
+      this.gweiMinimum = gweiMinimum;
+      this.speed = speed;
+      this.lean = lean;
+      this.testMode = testMode;
       this.contractAddress = contractAddress;
       this.proofCallback = proofCallback;
       this.updateBlockchainLoop = new Looper(
@@ -839,7 +838,7 @@ module.exports = class KoinosMiner {
          }
       }
    }
-   
+
    formatNonce(idTarget, blockHash) {
       let machine = "0";
       if(this.miningPool && this.miningPool.machine)

@@ -3,16 +3,27 @@ require('dotenv').config();
 const { program } = require('commander');
 let KoinosMiner = require('.');
 const readlineSync = require('readline-sync');
-const crypto = require('crypto')
+const crypto = require('crypto');
 var Web3 = require('web3');
 var w3 = new Web3(program.endpoint);
 var fs = require('fs');
 const packagejson = require('./package.json');
 
+const VER = packagejson.version;
+
 function conf_get(k, fallback = null) {
   if (k in process.env) return process.env[k];
   if (k.toUpperCase() in process.env) return process.env[k.toUpperCase()];
   return fallback;
+}
+
+function is_true(v) {
+   if (v === true) return true;
+   if (v >= 1 || v === "1") return true;
+   if (v === "true" || v === "True" || v === "TRUE") return true;
+   if (v === "yes" || v === "Yes" || v === "YES") return true;
+   if (v === "y" || v === "Y" || v === "t" || v === "T") return true;
+   return false;
 }
 
 var config = {
@@ -26,8 +37,10 @@ var config = {
   speed: conf_get('speed', false),
   gwei_minimum: conf_get('gwei_minimum', '15'),
   private_key: conf_get('private_key', conf_get('privateKey')),
-  use_env: conf_get('use_env', conf_get('useEnv', false)),
-  privex_mode: conf_get('privex_mode', conf_get('privexMode', false)),
+  use_env: is_true(conf_get('use_env', conf_get('useEnv', false))),
+  privex_mode: is_true(conf_get('privex_mode', conf_get('privexMode', false))),
+  use_pool: is_true(conf_get('use_pool', conf_get('usePool', true))),
+  pool_endpoint: conf_get('pool_endpoint', conf_get('poolEndpoint', 'https://api.koinos.club'))
 };
 
 config.useEnv = config.use_env;
@@ -39,7 +52,7 @@ program
    .option('-e, --endpoint <endpoint>', 'An ethereum endpoint', 'http://mining.koinos.io')
    .option('-t, --tip <percent>', 'The percentage of mined coins to tip the developers', config.tip)
    .option('-p, --proof-period <seconds>', 'How often you want to submit a proof on average', config.proof_period)
-   .option('-pe, --pool-endpoint <pool endpoint>', 'A mining pool endpoint', 'https://api.koinos.club')
+   .option('-pe, --pool-endpoint <pool endpoint>', 'A mining pool endpoint', config.pool_endpoint)
    .option('-k, --key-file <file>', 'AES encrypted file containing private key')
    .option('-m, --gas-multiplier <multiplier>', 'The multiplier to apply to the recommended gas price', config.gas_multiplier)
    .option('-l, --gas-price-limit <limit>', 'The maximum amount of gas to be spent on a proof submission', config.gas_price_limit)
@@ -53,7 +66,7 @@ program
    .option('--privex', 'Using this option is going to reward 1% (or --tip if > 0) of your mined coins to Privex Inc. (community developer)')
    .option('--wolf-mode', 'Using this option is going to reward 1% (or --tip if > 0) of your mined coins to therealwolf (community developer)')
    .option('--test-mode', `DON'T USE IF NOT DEV!`)
-   .option('--no-pool', 'Not use a mining pool')
+   .option('--no-pool', 'Do not use a mining pool')
    .parse(process.argv);
 
 if (!program.addr && !config.address) {
@@ -62,16 +75,20 @@ if (!program.addr && !config.address) {
   process.exit(0);
 }
 
-config.addr          = config.address = program.addr ? program.addr : config.address;
-config.endpoint      = program.endpoint ? program.endpoint : config.endpoint;
-config.tip           = program.tip ? program.tip : config.tip;
-config.speed         = program.speed ? program.speed : config.speed;
-config.useEnv        = config.use_env = program.useEnv ? program.useEnv : config.use_env;
-config.proofPeriod   = config.proof_period = program.proofPeriod ? program.proofPeriod : config.proof_period;
-config.gasMultiplier = config.gas_multiplier = program.gasMultiplier ? program.gasMultiplier : config.gas_multiplier;
-config.gasPriceLimit = config.gas_price_limit = program.gasPriceLimit ? program.gasPriceLimit : config.gas_price_limit;
-config.gweiLimit     = config.gwei_limit = program.gweiLimit ? program.gweiLimit : config.gwei_limit;
-config.gweiMinimum   = config.gwei_minimum = program.gweiMinimum ? program.gweiMinimum : config.gwei_minimum;
+config.addr             = config.address = program.addr ? program.addr : config.address;
+config.endpoint         = program.endpoint ? program.endpoint : config.endpoint;
+config.pool_endpoint    = config.poolEndpoint  = program.poolEndpoint ? program.poolEndpoint : config.poolEndpoint;
+config.tip              = program.tip ? program.tip : config.tip;
+config.speed            = program.speed ? program.speed : config.speed;
+config.useEnv           = config.use_env = program.useEnv ? program.useEnv : config.use_env;
+config.usePool          = config.use_pool = program.noPool ? false : config.use_pool;
+config.proofPeriod      = config.proof_period = program.proofPeriod ? program.proofPeriod : config.proof_period;
+config.gasMultiplier    = config.gas_multiplier = program.gasMultiplier ? program.gasMultiplier : config.gas_multiplier;
+config.gasPriceLimit    = config.gas_price_limit = program.gasPriceLimit ? program.gasPriceLimit : config.gas_price_limit;
+config.gweiLimit        = config.gwei_limit = program.gweiLimit ? program.gweiLimit : config.gwei_limit;
+config.gweiMinimum      = config.gwei_minimum = program.gweiMinimum ? program.gweiMinimum : config.gwei_minimum;
+config.privexMode       = config.privex_mode = program.privex ? program.privex : config.privex_mode;
+config.wolfMode         = config.wolf_mode = program.wolfMode ? program.wolfMode : config.wolf_mode;
 
 console.log(` _  __     _                   __  __ _`);
 console.log(`| |/ /    (_)                 |  \\/  (_)`);
@@ -79,11 +96,11 @@ console.log(`| ' / ___  _ _ __   ___  ___  | \\  / |_ _ __   ___ _ __`);
 console.log(`|  < / _ \\| | '_ \\ / _ \\/ __| | |\\/| | | '_ \\ / _ \\ '__|`);
 console.log(`| . \\ (_) | | | | | (_) \\__ \\ | |  | | | | | |  __/ |`);
 console.log(`|_|\\_\\___/|_|_| |_|\\___/|___/ |_|  |_|_|_| |_|\\___|_|`);
-console.log(`------------- Version 1.0.4 (Wolf Edition) -------------`);
+console.log(`--------- Version ${VER} (Privex/Wolf Edition) ----------`);
 console.log(`--------------------------------------------------------`);
 
-const privexModeOnly = (!program.tip || program.tip === '0') && program.privexMode;
-const wolfModeOnly = (!program.tip || program.tip === '0') && program.wolfMode;
+const privexModeOnly = (!program.tip || program.tip === '0') && config.privexMode;
+const wolfModeOnly = (!program.tip || program.tip === '0') && config.wolfMode;
 
 const getProofPeriodDate = () => {
    const proofPeriod = Number(program.proofPeriod);
@@ -211,12 +228,14 @@ if(program.testMode) {
    readlineSync.question('Are you sure?');
 }
 
-if (program.pool)
-{
-   console.log('Using mining pool: ' + program.poolEndpoint);
+if (config.use_pool) {
+   console.log('Using mining pool: ' + config.poolEndpoint);
+   account = {
+      address: "0x0000000000000000000000000000000000000000",
+      privateKey: "0x0000000000000000000000000000000000000000",
+   };
 }
-
-if(config.useEnv || (!program.import && program.useEnv)) {
+else if(config.useEnv || (!program.import && program.useEnv)) {
    if(!config.private_key) {
       console.log(``);
       console.log(`Can't find privateKey / PRIVATE_KEY within .env file. (--use-env)`);
@@ -288,6 +307,9 @@ console.log(`[JS](app.js) Proof every ${getProofPeriodDate()} (${config.proofPer
 if(wolfModeOnly) {
    console.log(`[JS](app.js) Wolf Mode Engaged! Gracias! (1% Tip)`);
    console.log(`[JS](app.js) Open Orchard Tip Disabled :(`);
+} else if(privexModeOnly) {
+   console.log(`[JS](app.js) Privex Mode Engaged! THANK YOU SO MUCH! (1% Tip)`);
+   console.log(`[JS](app.js) Open Orchard Tip Disabled :(`);
 } else {
    console.log(`[JS](app.js) Open Orchard Developer Tip: ${config.tip}%`); ;
    if(program.wolfMode) console.log(`[JS](app.js) Wolf Mode Engaged! Gracias!`);
@@ -298,11 +320,11 @@ console.log(``);
 var miner = new KoinosMiner(
    config.addr,
    tip_addresses,
-   program.pool ? "0x0000000000000000000000000000000000000000" : account.address,
-   program.pool ? program.poolEndpoint : null,
+   config.use_pool ? "0x0000000000000000000000000000000000000000" : account.address,
+   config.use_pool ? config.pool_endpoint : null,
    privex_tip_address,
    wolf_tip_address,
-   account.address,
+   // account.address,
    contract_address,
    config.endpoint,
    config.tip,
@@ -312,8 +334,8 @@ var miner = new KoinosMiner(
    config.gweiLimit,
    config.gweiMinimum,
    program.speed,
-   program.privexMode,
-   program.wolfMode,
+   config.privexMode,
+   config.wolfMode,
    program.lean,
    program.testMode,
    signCallback,
