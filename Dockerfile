@@ -30,7 +30,6 @@ COPY --from=base /app/MiningPool.js /app/MiningPool.js
 COPY --from=base /app/retry.js /app/retry.js
 COPY --from=base /app/node_modules /app/node_modules 
 COPY --from=base /app/bin /app/bin
-COPY --from=base /app/assets /app/assets
 
 RUN chown -R node:node /app
 USER node

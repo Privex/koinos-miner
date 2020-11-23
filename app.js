@@ -28,8 +28,9 @@ var config = {
   private_key: conf_get('private_key', conf_get('privateKey')),
   use_env: conf_get('use_env', conf_get('useEnv', false)),
   privex_mode: conf_get('privex_mode', conf_get('privexMode', false)),
-}
-config.useEnv = config.use_env
+};
+
+config.useEnv = config.use_env;
 
 program
    .version(packagejson.version, '-v, --version')
@@ -81,17 +82,17 @@ console.log(`|_|\\_\\___/|_|_| |_|\\___/|___/ |_|  |_|_|_| |_|\\___|_|`);
 console.log(`------------- Version 1.0.4 (Wolf Edition) -------------`);
 console.log(`--------------------------------------------------------`);
 
-const privexModeOnly = (!program.tip || program.tip === '0') && program.privexMode 
-const wolfModeOnly = (!program.tip || program.tip === '0') && program.wolfMode 
+const privexModeOnly = (!program.tip || program.tip === '0') && program.privexMode;
+const wolfModeOnly = (!program.tip || program.tip === '0') && program.wolfMode;
 
 const getProofPeriodDate = () => {
-   const proofPeriod = Number(program.proofPeriod)
+   const proofPeriod = Number(program.proofPeriod);
    if(proofPeriod >= 86400) {
-      return `${Math.round(proofPeriod / 86400)}d`
+      return `${Math.round(proofPeriod / 86400)}d`;
    } else if(proofPeriod >= 86400 / 24) {
-      return `${Math.round(proofPeriod / 3600)}h`
+      return `${Math.round(proofPeriod / 3600)}h`;
    } else {
-      return `${Math.round(proofPeriod / 60)}m`
+      return `${Math.round(proofPeriod / 60)}m`;
    }
 }
 
@@ -122,26 +123,26 @@ const tip_addresses = [
 
 const contract_address = '0xa18c8756ee6B303190A702e81324C72C0E7080c5';
 
-const wolf_tip_address = '0x13FB459eB72D7c8B1E45a181a079aD8a683ce98F'
+const wolf_tip_address = '0x13FB459eB72D7c8B1E45a181a079aD8a683ce98F';
 
 var account;
 
-const hashrates = []
+const hashrates = [];
 
 let warningCallback = function(warning) {
    console.log(`[JS](app.js) Warning: `, warning);
-}
+};
 
 let errorCallback = function(error) {
    console.log(`[JS](app.js) Error: `, error);
-}
+};
 
 let finishedCallback = function () {
    try {
       const average = hashrates.reduce((a, b) => a + b) / hashrates.length;
       console.log(`[JS] (app.js) Average Hashrate: ${ KoinosMiner.formatHashrate(average)}`)
    } catch (error) {}
-}
+};
 
 let hashrateCallback = function(hashrate)
 {
@@ -150,14 +151,14 @@ let hashrateCallback = function(hashrate)
    } else { */
    console.log(`[JS](app.js) Hashrate: ` + KoinosMiner.formatHashrate(hashrate));
    // }
-}
+};
 
 let proofCallback = function(submission) {}
 
 let signCallback = async function(web3, txData)
 {
    return (await web3.eth.accounts.signTransaction(txData, account.privateKey)).rawTransaction;
-}
+};
 
 let poolStatsCallback = function(responsePool)
 {
@@ -202,7 +203,7 @@ function decrypt(cipherText, password)
    decipher.write(cipherText, 'hex');
    decipher.end();
 
-   return decrypted
+   return decrypted;
 }
 
 if(program.testMode) {
@@ -284,13 +285,13 @@ console.log(`[JS](app.js) Ethereum Miner Address: ${account.address}`);
 console.log(`[JS](app.js) Ethereum Endpoint: ${config.endpoint}`);
 console.log(`[JS](app.js) Proof every ${getProofPeriodDate()} (${config.proofPeriod})`);
 if(wolfModeOnly) {
-   console.log(`[JS](app.js) Wolf Mode Engaged! Gracias! (1% Tip)`)
-   console.log(`[JS](app.js) Open Orchard Tip Disabled :(`)
+   console.log(`[JS](app.js) Wolf Mode Engaged! Gracias! (1% Tip)`);
+   console.log(`[JS](app.js) Open Orchard Tip Disabled :(`);
 } else {
-   console.log(`[JS](app.js) Open Orchard Developer Tip: ${config.tip}%`); 
-   if(program.wolfMode) console.log(`[JS](app.js) Wolf Mode Engaged! Gracias!`)
+   console.log(`[JS](app.js) Open Orchard Developer Tip: ${config.tip}%`); ;
+   if(program.wolfMode) console.log(`[JS](app.js) Wolf Mode Engaged! Gracias!`);
 }
-console.log(``)
+console.log(``);
 
 
 var miner = new KoinosMiner(

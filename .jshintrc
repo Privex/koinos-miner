@@ -1,0 +1,10 @@
+{
+    "esversion": 8,
+    "node": true,
+    "globals": {
+        "console": false,
+        "process": false,
+        "Buffer": false,
+        "require": false
+    }
+}
